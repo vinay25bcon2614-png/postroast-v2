@@ -1,0 +1,151 @@
+.composer-card {
+  background: var(--s1);
+  border: 1px solid var(--b2);
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  margin-top: 20px;
+}
+
+.composer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--b1);
+  gap: 12px;
+}
+
+.composer-label {
+  font-size: 11px;
+  color: var(--t3);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.composer-modes {
+  display: flex;
+  gap: 6px;
+}
+
+.mode-tab {
+  font-size: 11px;
+  padding: 4px 10px;
+  background: var(--s2);
+  color: var(--t3);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.mode-tab:hover {
+  background: var(--s3);
+  color: var(--t2);
+}
+
+.mode-tab.active {
+  background: var(--s1);
+  color: var(--t1);
+  border: 1px solid var(--b1);
+}
+
+.composer-textarea {
+  width: 100%;
+  min-height: 90px;
+  padding: 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  resize: none;
+  background: transparent;
+  color: var(--t1);
+  border: none;
+  outline: none;
+}
+
+.composer-footer {
+  padding: 10px 14px;
+  border-top: 1px solid var(--b1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.composer-goals {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 300px;
+}
+
+.goals-label {
+  font-size: 12px;
+  color: var(--t3);
+  font-weight: 600;
+}
+
+.goal-chip {
+  font-size: 11px;
+  padding: 4px 10px;
+  background: var(--s2);
+  color: var(--t3);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all var(--transition);
+  border: 1px solid transparent;
+}
+
+.goal-chip:hover {
+  background: var(--s3);
+  color: var(--t2);
+}
+
+.goal-chip.active {
+  background: var(--acc);
+  color: var(--t1);
+  border-color: var(--acc-dark);
+}
+
+.composer-style {
+  font-size: 12px;
+  color: var(--t3);
+}
+
+.composer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.char-count {
+  font-size: 11px;
+  color: var(--t4);
+}
+
+.roast-btn {
+  background: var(--acc);
+  color: var(--t1);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.roast-btn:hover:not(:disabled) {
+  background: var(--acc-light);
+  transform: translateY(-1px);
+}
+
+.roast-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

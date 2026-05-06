@@ -1,0 +1,121 @@
+/* PostRoast Premium Design System */
+
+:root {
+  /* Colors - Dark Theme */
+  --bg: #0c0c0e;
+  --s1: #111114;
+  --s2: #18181c;
+  --s3: #22222a;
+  --b1: #2a2a2f;
+  --b2: #34343b;
+  --b3: #3e3e46;
+  
+  /* Accent */
+  --acc: #FF5C00;
+  
+  /* Status Colors */
+  --ok: #22c55e;
+  --warn: #f59e0b;
+  --error: #ef4444;
+  --info: #3b82f6;
+  
+  /* Text */
+  --t1: #ffffff;
+  --t2: #e5e7eb;
+  --t3: #9ca3af;
+  --t4: #6b7280;
+  
+  /* Accent variants */
+  --acc-dark: #e04d00;
+  --acc-light: #ff7a1a;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.2);
+  
+  /* Typography */
+  --sans: system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', sans-serif;
+  --mono: 'Monaco', 'Courier New', monospace;
+  
+  /* Transitions */
+  --transition: 0.15s ease;
+  
+  /* Z-index scale */
+  --z-dropdown: 1000;
+  --z-sticky: 100;
+  --z-base: 1;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--t1);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--b2);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--b3);
+}
+
+/* Base button styles */
+button {
+  font-family: var(--sans);
+  font-size: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  transition: all var(--transition);
+}
+
+/* Base input styles */
+input,
+textarea {
+  font-family: var(--sans);
+  background: transparent;
+  border: none;
+  color: inherit;
+}
+
+textarea::placeholder {
+  color: var(--t4);
+}
+
+input::placeholder {
+  color: var(--t4);
+}
+
+/* Utilities */
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}

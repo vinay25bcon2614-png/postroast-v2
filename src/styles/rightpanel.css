@@ -1,0 +1,109 @@
+.right-panel {
+  position: fixed;
+  right: 0;
+  top: 52px;
+  width: 280px;
+  height: calc(100vh - 52px);
+  background: var(--bg);
+  border-left: 1px solid var(--b1);
+  display: flex;
+  flex-direction: column;
+  z-index: var(--z-base);
+}
+
+.right-panel-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--b1);
+}
+
+.right-panel-tab {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--t3);
+  padding: 12px 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition);
+  text-align: center;
+  position: relative;
+}
+
+.right-panel-tab:hover {
+  color: var(--t2);
+}
+
+.right-panel-tab.active {
+  color: var(--t1);
+}
+
+.right-panel-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--acc);
+}
+
+.right-panel-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  overflow-y: auto;
+}
+
+.style-dna-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--t2);
+}
+
+.style-dna-status,
+.style-dna-voice {
+  padding: 8px;
+  background: var(--s1);
+  border-radius: 6px;
+  border: 1px solid var(--b1);
+}
+
+.style-dna-patterns {
+  padding: 8px;
+  background: var(--s1);
+  border-radius: 6px;
+  border: 1px solid var(--b1);
+}
+
+.style-dna-patterns strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  color: var(--t1);
+}
+
+.style-dna-patterns ul {
+  list-style: none;
+  padding-left: 0;
+  font-size: 11px;
+}
+
+.style-dna-patterns li {
+  padding: 4px 0;
+  color: var(--t3);
+}
+
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  text-align: center;
+  color: var(--t4);
+  font-size: 12px;
+}

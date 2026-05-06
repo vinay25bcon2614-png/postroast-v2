@@ -1,0 +1,81 @@
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.kpi-card {
+  background: var(--s1);
+  border: 1px solid var(--b1);
+  padding: 12px 14px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all var(--transition);
+}
+
+.kpi-card:hover {
+  border-color: var(--b2);
+  background: var(--s2);
+}
+
+.kpi-value {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.color-green {
+  color: var(--ok);
+}
+
+.color-white {
+  color: var(--t1);
+}
+
+.color-amber {
+  color: var(--warn);
+}
+
+.color-purple {
+  color: #a855f7;
+}
+
+.kpi-label {
+  font-size: 11px;
+  color: var(--t3);
+  font-weight: 500;
+}
+
+.kpi-trend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--t3);
+}
+
+.trend-icon {
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.trend-icon.positive {
+  color: var(--ok);
+}
+
+.trend-icon.negative {
+  color: var(--error);
+}
+
+.trend-text {
+  font-size: 11px;
+}
+
+@media (max-width: 1400px) {
+  .kpi-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

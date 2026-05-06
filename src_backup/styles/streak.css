@@ -1,0 +1,62 @@
+.streak-box {
+  background: var(--s2);
+  border: 1px solid var(--b1);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.streak-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.streak-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--t2);
+}
+
+.streak-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ok);
+}
+
+.streak-days {
+  display: flex;
+  gap: 5px;
+  justify-content: space-around;
+}
+
+.streak-day {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  transition: all var(--transition);
+}
+
+.streak-day.completed {
+  background: var(--ok);
+  color: var(--t1);
+}
+
+.streak-day.missed {
+  background: var(--s3);
+  color: var(--t4);
+}
+
+.streak-footer {
+  font-size: 11px;
+  color: var(--t3);
+  text-align: center;
+  line-height: 1.4;
+}
