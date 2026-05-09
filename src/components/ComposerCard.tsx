@@ -1,18 +1,19 @@
 import { FC, useState, useCallback } from 'react';
-import { ComposerCardProps } from '../types';
+import { ComposerCardProps, GoalId } from '../types';
+import { getAllGoals } from '../lib/goals';
 import '../styles/composer.css';
 
-const goals = ['Get Clients', 'Grow Audience', 'Thought Leader', 'Brand Awareness'];
+const modes = ['Full Roast', 'Hook Only', 'Rewrite Only', 'Audit'];
 
 const ComposerCard: FC<ComposerCardProps> = ({
   onRoast,
-  defaultGoal = 'Get Clients',
+  defaultGoal = 'get_clients' as GoalId,
   isLoading = false,
 }) => {
   const [content, setContent] = useState('');
-  const [selectedGoal, setSelectedGoal] = useState(defaultGoal);
+  const [selectedGoal, setSelectedGoal] = useState<GoalId>(defaultGoal as GoalId);
   const [mode, setMode] = useState('Full Roast');
-  const modes = ['Full Roast', 'Hook Only', 'Rewrite Only', 'Audit'];
+  const goals = getAllGoals();
 
   const handleRoast = useCallback(() => {
     if (content.trim()) {
@@ -50,11 +51,12 @@ const ComposerCard: FC<ComposerCardProps> = ({
           <span className="goals-label">Goal:</span>
           {goals.map((goal) => (
             <button
-              key={goal}
-              className={`goal-chip ${selectedGoal === goal ? 'active' : ''}`}
-              onClick={() => setSelectedGoal(goal)}
+              key={goal.id}
+              className={`goal-chip ${selectedGoal === goal.id ? 'active' : ''}`}
+              onClick={() => setSelectedGoal(goal.id as GoalId)}
+              title={goal.description}
             >
-              {goal}
+              {goal.emoji} {goal.label.split(' ').pop()}
             </button>
           ))}
         </div>

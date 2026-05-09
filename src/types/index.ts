@@ -139,3 +139,33 @@ export interface RightPanelProps {
   templates?: Format[];
   styleDNA?: StyleDNA;
 }
+
+/* Goal System Types */
+
+export type GoalId = 'get_clients' | 'grow_audience' | 'authority' | 'balanced';
+
+export interface Goal {
+  id: GoalId;
+  label: string;
+  description: string;
+  emoji: string;
+  scoringWeights: Record<string, number>;
+  bestTemplates: string[];
+  rewriteGuidance: RewriteGuidance;
+}
+
+export interface RewriteGuidance {
+  openWith: string;
+  tone: string;
+  structure: string;
+  avoidLanguage: string[];
+  requiredElements: string[];
+}
+
+export interface UserGoalProfile {
+  selectedGoal: GoalId;
+  industry?: string;
+  niche?: string;
+  voice?: string;
+  targetAudience?: string;
+}
