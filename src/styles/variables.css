@@ -1,0 +1,20 @@
+:root {
+  --bg: #0d0d0f;
+  --panel: #141417;
+  --panel-2: #1a1a1e;
+  --border: #24242b;
+  --text: #f4f4f5;
+  --muted: #a1a1aa;
+  --accent: #ff5c00;
+  --accent-2: #ff7b33;
+  --ok: #22c55e;
+  --warn: #f59e0b;
+  --bad: #ef4444;
+  --radius: 12px;
+  --transition: 0.2s ease;
+  --space-12: 12px;
+  --space-14: 14px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --font: 'Geist', Inter, system-ui, -apple-system, sans-serif;
+}
