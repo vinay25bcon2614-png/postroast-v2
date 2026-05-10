@@ -6,7 +6,7 @@ import ResultsPanel from './ResultsPanel';
 export default function Dashboard() {
   const [loading, setLoading] = useState(false);
 
-  const onSubmit = () => {
+  const onSubmit = (_text: string, _goal: string) => {
     setLoading(true);
     window.setTimeout(() => setLoading(false), 800);
   };

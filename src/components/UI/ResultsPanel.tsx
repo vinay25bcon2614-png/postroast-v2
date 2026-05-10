@@ -34,7 +34,13 @@ export default function ResultsPanel() {
               Most founders treat LinkedIn like a press release. I did too, and got no pipeline.
             </article>
             <article className="diff-col">
-              Most founders write LinkedIn posts like <mark>corporate announcements</mark>.\n\nI did it for 6 months and got <mark>zero inbound leads</mark>.\n\nWhen I switched to <mark>problem-first posts with proof</mark>, demos started landing in my inbox.
+              Most founders write LinkedIn posts like <mark>corporate announcements</mark>.
+              <br />
+              <br />
+              I did it for 6 months and got <mark>zero inbound leads</mark>.
+              <br />
+              <br />
+              When I switched to <mark>problem-first posts with proof</mark>, demos started landing in my inbox.
             </article>
           </div>
           <div className="row-between" style={{ marginTop: 10 }}>
