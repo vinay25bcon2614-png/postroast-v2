@@ -2,14 +2,6 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
-  "env": {
-    "VITE_SITE_URL": "https://trypostroast.com",
-    "VITE_API_URL": "https://trypostroast.com",
-    "VITE_SUPABASE_URL": "https://zipuuqnejwnazhxtbavv.supabase.co/rest/v1/",
-    "VITE_SUPABASE_ANON_KEY": "@VITE_SUPABASE_ANON_KEY",
-    "VITE_GEMINI_API_KEY": "@VITE_GEMINI_API_KEY"
-  },
-
   "github": {
     "silent": true
   }
