@@ -5,25 +5,18 @@ import '../styles/sidebar.css';
 const Sidebar: FC<SidebarProps> = ({ activeSection, onNavigate }) => {
   const sections = [
     {
-      label: 'CORE',
+      label: 'WORKSPACE',
       items: [
-        { id: 'workspace', label: 'Workspace', icon: '📊' },
-        { id: 'roasts', label: 'My Roasts', icon: '🔥' },
-        { id: 'templates', label: 'Templates', icon: '📋' },
-      ],
-    },
-    {
-      label: 'GROWTH',
-      items: [
-        { id: 'style-dna', label: 'Style DNA', icon: '🧬', badge: 'NEW', badgeColor: 'purple' },
-        { id: 'leaderboard', label: 'Leaderboard', icon: '🏆', badge: 'LIVE', badgeColor: 'green' },
+        { id: 'workspace', label: 'Dashboard', icon: '📊' },
+        { id: 'roasts', label: 'Post History', icon: '📚' },
       ],
     },
     {
       label: 'TOOLS',
       items: [
         { id: 'analytics', label: 'Analytics', icon: '📈' },
-        { id: 'settings', label: 'Settings', icon: '⚙️' },
+        { id: 'goal-tracker', label: 'Goal Tracker', icon: '🎯' },
+        { id: 'cta-builder', label: 'CTA Builder', icon: '💬' },
       ],
     },
   ];

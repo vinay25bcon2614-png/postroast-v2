@@ -1,4 +1,4 @@
-import { FC, useState, useCallback } from 'react';
+import { FC, useState, useCallback, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import KPIRow from './KPIRow';
@@ -6,6 +6,18 @@ import ComposerCard from './ComposerCard';
 import ScoreCard from './ScoreCard';
 import InsightCard from './InsightCard';
 import RightPanel from './RightPanel';
+import GoalTrackerScreen from './GoalTrackerScreen';
+import PostHistoryScreen from './PostHistoryScreen';
+import AnalyticsScreen from './AnalyticsScreen';
+import CTABuilderScreen from './CTABuilderScreen';
+import { useAuth } from '../contexts/AuthContext';
+import { getRoast } from '../lib/backend';
+import {
+  loadUserCreatorPreferences,
+  loadUserGoals,
+  loadUserAnalytics,
+  loadUserStreak,
+} from '../lib/userdata';
 import {
   User,
   KPIMetrics,
@@ -122,19 +134,57 @@ const mockStreakDays: StreakDay[] = [
 ];
 
 const Dashboard: FC = () => {
+  const { user } = useAuth();
   const [activeSection, setActiveSection] = useState('workspace');
   const [activeRightTab, setActiveRightTab] = useState<'rewrite' | 'templates' | 'style-dna'>(
     'rewrite'
   );
   const [isLoading, setIsLoading] = useState(false);
+  const [creatorMix, setCreatorMix] = useState([]);
+  const [userGoals, setUserGoals] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
 
-  const handleRoast = useCallback((content: string, goal: string) => {
-    console.log('Roasting:', content, goal);
+  // Load user data on mount
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const loadData = async () => {
+      try {
+        const [prefs, goals, analyticsData] = await Promise.all([
+          loadUserCreatorPreferences(user.id),
+          loadUserGoals(user.id),
+          loadUserAnalytics(user.id),
+        ]);
+        
+        setCreatorMix(prefs);
+        setUserGoals(goals);
+        setAnalytics(analyticsData);
+      } catch (error) {
+        console.error('Failed to load user data:', error);
+      }
+    };
+
+    loadData();
+  }, [user?.id]);
+
+  const handleRoast = useCallback(async (content: string, goal: string) => {
+    console.log('Roasting:', content, 'Goal:', goal, 'Creators:', creatorMix);
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      const result = await getRoast(
+        content,
+        [{ id: goal }],
+        creatorMix
+      );
+      console.log('Roast result:', result);
+      // TODO: Update UI with real results
+    } catch (error) {
+      console.error('Roast failed:', error);
+      alert('Failed to roast: ' + (error as Error).message);
+    } finally {
       setIsLoading(false);
-    }, 2000);
-  }, []);
+    }
+  }, [creatorMix]);
 
   const handleNavigate = useCallback((section: string) => {
     setActiveSection(section);
@@ -153,37 +203,47 @@ const Dashboard: FC = () => {
       />
       <Sidebar activeSection={activeSection} onNavigate={handleNavigate} />
 
-      <main className="dashboard-main">
-        <div className="dashboard-content">
-          <h1 className="dashboard-title">Workspace</h1>
+      {/* Render different screens based on activeSection */}
+      {activeSection === 'workspace' && (
+        <main className="dashboard-main">
+          <div className="dashboard-content">
+            <h1 className="dashboard-title">Workspace</h1>
 
-          <KPIRow metrics={mockMetrics} />
+            <KPIRow metrics={mockMetrics} />
 
-          <div className="dashboard-grid">
-            <div className="main-column">
-              <ComposerCard
-                onRoast={handleRoast}
-                defaultGoal="Get Clients"
-                isLoading={isLoading}
-              />
-              <ScoreCard score={mockScore} formatDetected="Authority claim" />
-              <InsightCard
-                goal="Get Clients"
-                insight="Your hook doesn't create curiosity. You're leading with your solution instead of your audience's problem. LinkedIn users scroll past generic credentials—they stop for relatable struggles."
-                primaryFix="Start with a contrarian statement or surprising statistic that makes readers think 'wait, is that true?' Then deliver the insight."
-              />
+            <div className="dashboard-grid">
+              <div className="main-column">
+                <ComposerCard
+                  onRoast={handleRoast}
+                  defaultGoal="Get Clients"
+                  isLoading={isLoading}
+                />
+                <ScoreCard score={mockScore} formatDetected="Authority claim" />
+                <InsightCard
+                  goal="Get Clients"
+                  insight="Your hook doesn't create curiosity. You're leading with your solution instead of your audience's problem. LinkedIn users scroll past generic credentials—they stop for relatable struggles."
+                  primaryFix="Start with a contrarian statement or surprising statistic that makes readers think 'wait, is that true?' Then deliver the insight."
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </main>
+        </main>
+      )}
 
-      <RightPanel
-        activeTab={activeRightTab}
-        onTabChange={setActiveRightTab}
-        rewrite={mockRewrite}
-        templates={mockTemplates}
-        styleDNA={mockStyleDNA}
-      />
+      {activeSection === 'roasts' && <PostHistoryScreen />}
+      {activeSection === 'analytics' && <AnalyticsScreen />}
+      {activeSection === 'goal-tracker' && <GoalTrackerScreen />}
+      {activeSection === 'cta-builder' && <CTABuilderScreen />}
+
+      {activeSection === 'workspace' && (
+        <RightPanel
+          activeTab={activeRightTab}
+          onTabChange={setActiveRightTab}
+          rewrite={mockRewrite}
+          templates={mockTemplates}
+          styleDNA={mockStyleDNA}
+        />
+      )}
     </div>
   );
 };

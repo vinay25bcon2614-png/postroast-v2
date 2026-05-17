@@ -1,0 +1,226 @@
+/* CTA Builder Styles */
+
+.cta-builder-container {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 20px;
+  max-width: 1200px;
+}
+
+.cta-input-section {
+  background: var(--s1);
+  border: 1px solid var(--b1);
+  border-radius: var(--r14);
+  padding: 20px;
+  height: fit-content;
+  position: sticky;
+  top: 80px;
+}
+
+.cta-input-section h2 {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.goal-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.goal-option {
+  padding: 8px 12px;
+  border-radius: var(--r6);
+  border: 1px solid var(--b2);
+  background: transparent;
+  color: var(--t2);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s;
+  text-align: left;
+}
+
+.goal-option:hover {
+  background: var(--s2);
+  border-color: var(--b3);
+  color: var(--tx);
+}
+
+.goal-option.active {
+  background: var(--accl);
+  border-color: var(--acc);
+  color: var(--acc);
+}
+
+.goal-hint {
+  font-size: 10px;
+  color: var(--t2);
+  line-height: 1.4;
+  padding: 8px;
+  background: var(--s2);
+  border-radius: var(--r6);
+  margin-bottom: 16px;
+}
+
+.generate-cta-btn {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: var(--r6);
+  background: var(--acc);
+  color: #fff;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.12s;
+}
+
+.generate-cta-btn:hover {
+  background: var(--acc2);
+}
+
+.cta-results-section h2 {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.cta-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.cta-option {
+  background: var(--s1);
+  border: 1px solid var(--b1);
+  border-radius: var(--r10);
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.cta-option:hover {
+  border-color: var(--b2);
+  background: var(--s2);
+}
+
+.cta-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.cta-icon {
+  font-size: 16px;
+}
+
+.cta-type {
+  font-size: 11px;
+  font-weight: 700;
+  flex: 1;
+}
+
+.cta-score {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--accl);
+  color: var(--acc);
+}
+
+.cta-text {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.55;
+  margin-bottom: 10px;
+  padding: 8px;
+  background: var(--s2);
+  border-radius: var(--r6);
+}
+
+.cta-footer {
+  display: flex;
+  gap: 6px;
+}
+
+.copy-cta-btn,
+.use-cta-btn {
+  flex: 1;
+  padding: 5px 8px;
+  border-radius: var(--r6);
+  border: 1px solid var(--b2);
+  background: transparent;
+  color: var(--t2);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.copy-cta-btn:hover,
+.use-cta-btn:hover {
+  background: var(--s3);
+  color: var(--tx);
+}
+
+.copy-cta-btn.copied {
+  background: var(--okl);
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.use-cta-btn {
+  background: var(--accl);
+  border-color: var(--acc);
+  color: var(--acc);
+}
+
+.cta-tips {
+  background: var(--s1);
+  border: 1px solid var(--b1);
+  border-radius: var(--r10);
+  padding: 14px;
+}
+
+.cta-tips h3 {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.cta-tips ul {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+}
+
+.cta-tips li {
+  font-size: 11px;
+  color: var(--t2);
+  line-height: 1.5;
+}
+
+.cta-tips strong {
+  color: var(--tx);
+  font-weight: 600;
+}
+
+@media (max-width: 1024px) {
+  .cta-builder-container {
+    grid-template-columns: 1fr;
+  }
+
+  .cta-input-section {
+    position: relative;
+    top: auto;
+  }
+}
