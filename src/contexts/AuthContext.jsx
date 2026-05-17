@@ -66,6 +66,28 @@ export function AuthProvider({ children }) {
     if (error) throw error;
   };
 
+  const signInWithGoogle = async () => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`
+      }
+    });
+    if (error) throw error;
+    return data;
+  };
+
+  const signInWithLinkedIn = async () => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'linkedin_oidc',
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`
+      }
+    });
+    if (error) throw error;
+    return data;
+  };
+
   const value = {
     user,
     session,
@@ -73,6 +95,8 @@ export function AuthProvider({ children }) {
     login,
     signup,
     logout,
+    signInWithGoogle,
+    signInWithLinkedIn,
     supabase
   };
 
