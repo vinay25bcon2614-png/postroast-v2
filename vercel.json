@@ -9,15 +9,7 @@
     "VITE_SUPABASE_ANON_KEY": "@VITE_SUPABASE_ANON_KEY",
     "VITE_GEMINI_API_KEY": "@VITE_GEMINI_API_KEY"
   },
-  "build": {
-    "env": [
-      "VITE_SITE_URL",
-      "VITE_API_URL",
-      "VITE_SUPABASE_URL",
-      "VITE_SUPABASE_ANON_KEY",
-      "VITE_GEMINI_API_KEY"
-    ]
-  },
+
   "github": {
     "silent": true
   }
