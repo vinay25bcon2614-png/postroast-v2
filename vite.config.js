@@ -28,5 +28,6 @@ export default defineConfig({
     sourcemap: false,
     outDir: 'dist',
     assetsDir: 'assets',
+    minify: false
   }
 })

@@ -1,50 +1,138 @@
 /* PostRoast Premium Design System */
 
 :root {
-  /* Colors - Dark Theme */
-  --bg: #0c0c0e;
-  --s1: #111114;
-  --s2: #18181c;
-  --s3: #22222a;
-  --b1: #2a2a2f;
-  --b2: #34343b;
-  --b3: #3e3e46;
+  /* Colors - Deep Dark Theme */
+  --bg: #050505;
+  --bg-secondary: #0a0a0c;
+  --s1: #0f0f12;
+  --s2: #16161a;
+  --s3: #1e1e24;
+  --s4: #282830;
   
-  /* Accent */
-  --acc: #FF5C00;
+  /* Borders */
+  --b1: rgba(255, 255, 255, 0.04);
+  --b2: rgba(255, 255, 255, 0.08);
+  --b3: rgba(255, 255, 255, 0.12);
+  --b4: rgba(255, 255, 255, 0.16);
+  
+  /* Accent - Premium Orange */
+  --acc: #ff6a00;
+  --acc-dark: #e55a00;
+  --acc2: #ffa500;
+  --acc-glow: rgba(255, 106, 0, 0.3);
+  --accl: rgba(255, 106, 0, 0.08);
+  --accb: rgba(255, 106, 0, 0.15);
   
   /* Status Colors */
-  --ok: #22c55e;
+  --ok: #10b981;
+  --okl: rgba(16, 185, 129, 0.12);
   --warn: #f59e0b;
-  --error: #ef4444;
-  --info: #3b82f6;
+  --warnl: rgba(245, 158, 11, 0.12);
+  --bad: #ef4444;
+  --badl: rgba(239, 68, 68, 0.12);
+  --blue: #3b82f6;
+  --bluel: rgba(59, 130, 246, 0.12);
+  --purple: #a855f7;
+  --purpl: rgba(168, 85, 247, 0.12);
   
   /* Text */
-  --t1: #ffffff;
-  --t2: #e5e7eb;
-  --t3: #9ca3af;
-  --t4: #6b7280;
+  --tx: rgba(255, 255, 255, 0.95);
+  --t2: rgba(255, 255, 255, 0.55);
+  --t3: rgba(255, 255, 255, 0.32);
   
-  /* Accent variants */
-  --acc-dark: #e04d00;
-  --acc-light: #ff7a1a;
+  /* Shadows - Premium */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.6);
+  --shadow-premium: 0 20px 60px rgba(255, 106, 0, 0.15);
   
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.2);
+  /* Border Radius */
+  --r6: 6px;
+  --r10: 10px;
+  --r14: 14px;
+  --r20: 20px;
+  --r24: 24px;
+  --r28: 28px;
   
   /* Typography */
-  --sans: system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', sans-serif;
-  --mono: 'Monaco', 'Courier New', monospace;
+  --sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', 'Helvetica Neue', sans-serif;
+  --mono: 'JetBrains Mono', 'Monaco', 'Courier New', monospace;
   
   /* Transitions */
-  --transition: 0.15s ease;
+  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   
   /* Z-index scale */
   --z-dropdown: 1000;
   --z-sticky: 100;
   --z-base: 1;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes glideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 106, 0, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(255, 106, 0, 0.4);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 * {
@@ -53,12 +141,40 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   font-family: var(--sans);
   background: var(--bg);
-  color: var(--t1);
+  color: var(--tx);
   font-size: 14px;
   line-height: 1.6;
+  letter-spacing: 0.3px;
+}
+
+/* Utilities */
+.glass {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.container {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, var(--acc) 0%, var(--acc2) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* Custom scrollbar */
