@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { API_BASE_URL } from '../lib/apiConfig';
 
 interface Score {
   label: string;
@@ -11,26 +12,57 @@ export function PrePostAuditScreen() {
   const { user } = useAuth();
   const [postText, setPostText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [checks, setChecks] = useState<any[]>([]);
+  const [score, setScore] = useState<number | null>(null);
   const [shown, setShown] = useState(false);
 
   const performAudit = useCallback(async () => {
     if (!postText.trim()) return;
-    setLoading(true);
     
     try {
-      // Simulate audit checks
+      setLoading(true);
+      setError(null);
+
+      const { data: { session } } = await (window as any).supabase.auth.getSession();
+      if (!session) {
+        setError('You must be logged in to run an audit');
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/audit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          content: postText
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to run audit');
+      }
+
+      const data = await response.json();
+      
+      // Map API response to checks
       const newChecks = [
-        { id: 'hook', label: 'Hook strength', pass: postText.length > 20, warning: false },
-        { id: 'length', label: 'Optimal length', pass: postText.length < 500, warning: postText.length > 400 },
-        { id: 'cta', label: 'Clear CTA', pass: postText.toLowerCase().includes('comment') || postText.toLowerCase().includes('dm'), warning: false },
-        { id: 'typos', label: 'No typos detected', pass: true, warning: false },
-        { id: 'readability', label: 'Good line breaks', pass: postText.includes('\n'), warning: false },
+        { id: 'hook', label: 'Hook strength', pass: data.hookScore > 6, warning: false },
+        { id: 'length', label: 'Optimal length', pass: postText.length > 50 && postText.length < 1000, warning: postText.length > 800 },
+        { id: 'cta', label: 'Clear CTA', pass: data.hasCTA, warning: false },
+        { id: 'typos', label: 'Grammar quality', pass: data.grammarScore > 7, warning: false },
+        { id: 'readability', label: 'Readability', pass: data.readabilityScore > 6, warning: false },
       ];
       
       setChecks(newChecks);
+      setScore(data.predictedScore || Math.round((data.hookScore + data.grammarScore + data.readabilityScore) / 3 * 10));
       setShown(true);
-    } finally {
+      setLoading(false);
+    } catch (err: any) {
+      setError(err.message || 'Error running audit');
       setLoading(false);
     }
   }, [postText]);
@@ -51,6 +83,7 @@ export function PrePostAuditScreen() {
           className="audit-textarea"
         />
 
+        {error && <div style={{ color: 'var(--bad)', fontSize: '14px' }}>{error}</div>}
         <button
           onClick={performAudit}
           disabled={!postText.trim() || loading}
@@ -72,12 +105,16 @@ export function PrePostAuditScreen() {
             ))}
           </div>
           
-          <div className="audit-score">
-            <div className="predicted">
-              <div className="score-number" style={{ color: '#22c55e' }}>78</div>
-              <div className="score-label">Predicted Score</div>
+          {score !== null && (
+            <div className="audit-score">
+              <div className="predicted">
+                <div className="score-number" style={{ color: score > 70 ? '#22c55e' : score > 50 ? '#f59e0b' : '#ef4444' }}>
+                  {score}
+                </div>
+                <div className="score-label">Predicted Score</div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </div>

@@ -1,23 +1,52 @@
 import React, { useState } from "react";
 import "../components/screens.css";
+import { API_BASE_URL } from "../lib/apiConfig";
 
 export function HookBuilderScreen() {
   const [topic, setTopic] = useState("");
   const [hooks, setHooks] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const generateHooks = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setHooks([
-        { id: "1", text: "Did you know that...", strength: 8 },
-        { id: "2", text: "Everyone gets this wrong...", strength: 9 },
-        { id: "3", text: "I learned this the hard way...", strength: 7 },
-        { id: "4", text: "The truth is...", strength: 8 },
-        { id: "5", text: "Most people miss this...", strength: 9 },
-      ]);
+  const generateHooks = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data: { session } } = await (window as any).supabase.auth.getSession();
+      if (!session) {
+        setError('You must be logged in to generate hooks');
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/hooks/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          topic,
+          count: 5
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate hooks');
+      }
+
+      const data = await response.json();
+      setHooks(Array.isArray(data.hooks) ? data.hooks : []);
       setLoading(false);
-    }, 1200);
+    } catch (err: any) {
+      setError(err.message || 'Error generating hooks');
+      setLoading(false);
+    }
+  };
+
+  const copyHook = (text: string) => {
+    navigator.clipboard.writeText(text);
   };
 
   return (
@@ -29,20 +58,35 @@ export function HookBuilderScreen() {
       <div className="builder-controls">
         <div className="form-group">
           <label>Topic</label>
-          <input type="text" placeholder="What's your post about?" value={topic} onChange={(e) => setTopic(e.target.value)} />
+          <input 
+            type="text" 
+            placeholder="What's your post about?" 
+            value={topic} 
+            onChange={(e) => setTopic(e.target.value)} 
+            onKeyPress={(e) => e.key === 'Enter' && generateHooks()}
+          />
         </div>
-        <button className="btn-primary" onClick={generateHooks} disabled={!topic || loading}>{loading ? "Generating..." : "Generate"}</button>
+        {error && <div style={{ color: 'var(--bad)', fontSize: '14px' }}>{error}</div>}
+        <button className="btn-primary" onClick={generateHooks} disabled={!topic || loading}>
+          {loading ? "Generating..." : "Generate"}
+        </button>
       </div>
       <div className="hooks-grid">
-        {hooks.map(hook => (
-          <div key={hook.id} className="hook-card">
-            <p className="hook-text">{hook.text}</p>
-            <div className="hook-meta">
-              <span className="strength">Strength: {hook.strength}/10</span>
-              <button className="btn-small">Copy</button>
+        {hooks.length > 0 ? (
+          hooks.map((hook, idx) => (
+            <div key={idx} className="hook-card">
+              <p className="hook-text">{hook.text || hook}</p>
+              <div className="hook-meta">
+                <span className="strength">{hook.strength ? `Strength: ${hook.strength}/10` : 'Generated'}</span>
+                <button className="btn-small" onClick={() => copyHook(hook.text || hook)}>Copy</button>
+              </div>
             </div>
+          ))
+        ) : (
+          <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: 'var(--t2)' }}>
+            Enter a topic and click Generate to create hooks
           </div>
-        ))}
+        )}
       </div>
     </div>
   );

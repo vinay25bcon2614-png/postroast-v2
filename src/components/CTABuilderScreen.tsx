@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import '../styles/cta-builder.css';
+import { API_BASE_URL } from '../lib/apiConfig';
 
 interface CTAOption {
   id: string;
@@ -16,37 +17,9 @@ export const CTABuilderScreen: React.FC = () => {
     audience: '',
   });
 
-  const [ctaOptions, setCTAOptions] = useState<CTAOption[]>([
-    {
-      id: '1',
-      type: 'DM CTA',
-      text: 'DM me "interested" and I\'ll send you the blueprint.',
-      score: 92,
-      icon: '💬',
-    },
-    {
-      id: '2',
-      type: 'Book Call CTA',
-      text: 'Reply with "CALL" and let\'s talk through your specific situation.',
-      score: 88,
-      icon: '📞',
-    },
-    {
-      id: '3',
-      type: 'Application CTA',
-      text: 'Ready to work together? Link in bio to apply.',
-      score: 85,
-      icon: '🔗',
-    },
-    {
-      id: '4',
-      type: 'Newsletter CTA',
-      text: 'This is just the tip — full breakdown in my newsletter (100k+ subscribers).',
-      score: 72,
-      icon: '📧',
-    },
-  ]);
-
+  const [ctaOptions, setCTAOptions] = useState<CTAOption[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
   const handleCopy = (text: string, id: string) => {
@@ -55,9 +28,55 @@ export const CTABuilderScreen: React.FC = () => {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  const handleGenerate = () => {
-    // Simulate generating new CTAs
-    alert('Generating CTAs optimized for: ' + context.goal);
+  const handleGenerate = async () => {
+    try {
+      if (!context.topic.trim() || !context.audience.trim()) {
+        setError('Please fill in topic and audience');
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      const { data: { session } } = await (window as any).supabase.auth.getSession();
+      if (!session) {
+        setError('You must be logged in to generate CTAs');
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/cta/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          goal: context.goal,
+          topic: context.topic,
+          audience: context.audience
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate CTAs');
+      }
+
+      const data = await response.json();
+      const generatedCTAs = Array.isArray(data.ctas) ? data.ctas.map((cta: any, idx: number) => ({
+        id: String(idx + 1),
+        type: cta.type || 'CTA',
+        text: cta.text || cta,
+        score: cta.score || 80,
+        icon: cta.icon || '💬'
+      })) : [];
+      
+      setCTAOptions(generatedCTAs);
+      setLoading(false);
+    } catch (err: any) {
+      setError(err.message || 'Error generating CTAs');
+      setLoading(false);
+    }
   };
 
   const goalDescriptions = {
@@ -142,54 +161,63 @@ export const CTABuilderScreen: React.FC = () => {
               />
             </div>
 
-            <button className="generate-cta-btn" onClick={handleGenerate}>
-              ✨ Generate CTAs
+            {error && <div style={{ color: 'var(--bad)', fontSize: '14px' }}>{error}</div>}
+            <button className="generate-cta-btn" onClick={handleGenerate} disabled={loading}>
+              {loading ? '⏳ Generating...' : '✨ Generate CTAs'}
             </button>
           </div>
 
           <div className="cta-results-section">
-            <h2>Your CTAs (Ranked)</h2>
+            <h2>Your CTAs {ctaOptions.length > 0 && `(${ctaOptions.length} Generated)`}</h2>
             <div className="cta-list">
-              {ctaOptions.map((cta) => (
-                <div key={cta.id} className="cta-option">
-                  <div className="cta-header">
-                    <span className="cta-icon">{cta.icon}</span>
-                    <span className="cta-type">{cta.type}</span>
-                    <span className="cta-score">{cta.score}/100</span>
+              {ctaOptions.length > 0 ? (
+                ctaOptions.map((cta) => (
+                  <div key={cta.id} className="cta-option">
+                    <div className="cta-header">
+                      <span className="cta-icon">{cta.icon}</span>
+                      <span className="cta-type">{cta.type}</span>
+                      <span className="cta-score">{cta.score}/100</span>
+                    </div>
+                    <div className="cta-text">{cta.text}</div>
+                    <div className="cta-footer">
+                      <button
+                        className={`copy-cta-btn ${
+                          copied === cta.id ? 'copied' : ''
+                        }`}
+                        onClick={() => handleCopy(cta.text, cta.id)}
+                      >
+                        {copied === cta.id ? '✓ Copied' : 'Copy'}
+                      </button>
+                      <button className="use-cta-btn">Use in post</button>
+                    </div>
                   </div>
-                  <div className="cta-text">{cta.text}</div>
-                  <div className="cta-footer">
-                    <button
-                      className={`copy-cta-btn ${
-                        copied === cta.id ? 'copied' : ''
-                      }`}
-                      onClick={() => handleCopy(cta.text, cta.id)}
-                    >
-                      {copied === cta.id ? '✓ Copied' : 'Copy'}
-                    </button>
-                    <button className="use-cta-btn">Use in post</button>
-                  </div>
+                ))
+              ) : (
+                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--t2)' }}>
+                  Fill in the context above and generate CTAs
                 </div>
-              ))}
+              )}
             </div>
 
-            <div className="cta-tips">
-              <h3>CTA Best Practices</h3>
-              <ul>
-                <li>
-                  <strong>DM CTAs:</strong> Highest conversion for paid offers
-                </li>
-                <li>
-                  <strong>Comment CTAs:</strong> Best for engagement & virality
-                </li>
-                <li>
-                  <strong>Link CTAs:</strong> For lead capture & funnels
-                </li>
-                <li>
-                  <strong>Newsletter CTAs:</strong> Builds audience, low friction
-                </li>
-              </ul>
-            </div>
+            {ctaOptions.length > 0 && (
+              <div className="cta-tips">
+                <h3>CTA Best Practices</h3>
+                <ul>
+                  <li>
+                    <strong>DM CTAs:</strong> Highest conversion for paid offers
+                  </li>
+                  <li>
+                    <strong>Comment CTAs:</strong> Best for engagement & virality
+                  </li>
+                  <li>
+                    <strong>Link CTAs:</strong> For lead capture & funnels
+                  </li>
+                  <li>
+                    <strong>Newsletter CTAs:</strong> Builds audience, low friction
+                  </li>
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       </div>

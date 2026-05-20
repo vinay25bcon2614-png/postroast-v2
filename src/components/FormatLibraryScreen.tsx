@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../lib/apiConfig';
 
 interface Format {
   id: string;
@@ -44,11 +45,52 @@ export function FormatLibraryScreen() {
       uses: 8
     }
   ]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const toggleSave = (id: string) => {
-    setFormats(prev =>
-      prev.map(f => f.id === id ? { ...f, saved: !f.saved } : f)
-    );
+  const toggleSave = async (id: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const format = formats.find(f => f.id === id);
+      if (!format) return;
+
+      const { data: { session } } = await (window as any).supabase.auth.getSession();
+      if (!session) {
+        setError('You must be logged in to save formats');
+        setLoading(false);
+        return;
+      }
+
+      // Save to database
+      const endpoint = format.saved ? 'remove' : 'add';
+      const response = await fetch(`${API_BASE_URL}/api/user/formats/${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          formatId: id,
+          name: format.name,
+          template: format.template
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save format');
+      }
+
+      // Update local state
+      setFormats(prev =>
+        prev.map(f => f.id === id ? { ...f, saved: !f.saved } : f)
+      );
+      setLoading(false);
+    } catch (err: any) {
+      setError(err.message || 'Error saving format');
+      setLoading(false);
+    }
   };
 
   return (
@@ -58,6 +100,12 @@ export function FormatLibraryScreen() {
         <p>Proven LinkedIn post templates</p>
       </div>
 
+      {error && (
+        <div style={{ padding: '12px', background: 'rgba(255, 100, 100, 0.1)', color: 'var(--bad)', borderRadius: '8px', marginBottom: '20px' }}>
+          {error}
+        </div>
+      )}
+
       <div className="format-grid">
         {formats.map(format => (
           <div key={format.id} className="format-card">
@@ -66,6 +114,7 @@ export function FormatLibraryScreen() {
               <button
                 className={`save-btn ${format.saved ? 'saved' : ''}`}
                 onClick={() => toggleSave(format.id)}
+                disabled={loading}
               >
                 {format.saved ? '★' : '☆'}
               </button>

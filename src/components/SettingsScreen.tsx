@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { API_BASE_URL } from '../lib/apiConfig';
 
 interface SettingsForm {
   name: string;
@@ -21,6 +22,8 @@ export function SettingsScreen() {
     publicProfile: false
   });
   const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleChange = useCallback((field: string, value: any) => {
     setSettings(prev => ({ ...prev, [field]: value }));
@@ -28,10 +31,38 @@ export function SettingsScreen() {
   }, []);
 
   const handleSave = useCallback(async () => {
-    // Save to Supabase
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }, []);
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data: { session } } = await (window as any).supabase.auth.getSession();
+      if (!session) {
+        setError('You must be logged in to save settings');
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/user/settings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify(settings)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save settings');
+      }
+
+      setSaved(true);
+      setLoading(false);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err: any) {
+      setError(err.message || 'Error saving settings');
+      setLoading(false);
+    }
+  }, [settings]);
 
   return (
     <div className="screen-container">
@@ -108,9 +139,10 @@ export function SettingsScreen() {
         </div>
 
         <div className="form-actions">
-          {saved && <span className="saved-msg">✓ Saved</span>}
-          <button onClick={handleSave} className="btn-primary">
-            Save Changes
+          {error && <span className="error-msg">{error}</span>}
+          {saved && <span className="saved-msg">✓ Saved successfully</span>}
+          <button onClick={handleSave} className="btn-primary" disabled={loading}>
+            {loading ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
 
