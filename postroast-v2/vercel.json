@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "buildCommand": "cd my-app && npm install && npm run build",
+  "outputDirectory": "my-app/dist",
+  "framework": "vite",
+  "env": {
+    "VITE_SUPABASE_URL": "@vite_supabase_url",
+    "VITE_SUPABASE_ANON_KEY": "@vite_supabase_anon_key",
+    "VITE_API_URL": "@vite_api_url",
+    "VITE_SITE_URL": "@vite_site_url",
+    "ANTHROPIC_API_KEY": "@anthropic_api_key"
+  },
+  "github": {
+    "silent": true
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
+
