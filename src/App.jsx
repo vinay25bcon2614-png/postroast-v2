@@ -22,6 +22,8 @@ import StyleDNAScreen from './components/StyleDNAScreen'
 import FormatLibraryScreen from './components/FormatLibraryScreen'
 import GoalTrackerScreen from './components/GoalTrackerScreen'
 import PostHistoryScreen from './components/PostHistoryScreen'
+import { IntegrationsScreen } from './components/IntegrationsScreen'
+import { BillingScreen } from './components/BillingScreen'
 import LoginScreen from './components/auth/LoginScreen'
 import SignupScreen from './components/auth/SignupScreen'
 
@@ -57,6 +59,8 @@ function MainLayout({ children }) {
     { label: 'Formats', path: '/formats', icon: '📋' },
     { label: 'Style DNA', path: '/style-dna', icon: '🧬' },
     { label: 'Settings', path: '/settings', icon: '⚙️' },
+    { label: 'Integrations', path: '/integrations', icon: '🔗' },
+    { label: 'Billing', path: '/billing', icon: '💳' },
   ]
 
   return (
@@ -242,6 +246,28 @@ function AppRoutes() {
           <ProtectedRoute>
             <MainLayout>
               <SettingsScreen />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/integrations"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <IntegrationsScreen />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/billing"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <BillingScreen />
             </MainLayout>
           </ProtectedRoute>
         }

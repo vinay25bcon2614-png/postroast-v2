@@ -1,153 +1,191 @@
-export function getRoastPrompt(postText, goals, creatorMix) {
-  const goalDescriptions = {
-    get_clients: 'Convert followers into paying customers',
-    authority: 'Become the go-to expert in your niche',
-    growth: 'Build followers, increase reach',
-    viral: 'Occasional breakout posts with high impressions',
-    thought_leader: 'Shape industry, get speaking invites',
-    personal_brand: 'Build long-term recognition and credibility'
-  };
+/**
+ * PostRoast — Complete Prompt Library
+ * Used by roast.js and rewrite endpoint
+ */
 
-  const goalText = goals
-    .map(g => `${g.id}: ${goalDescriptions[g.id] || g.id}`)
-    .join('\n');
-
-  const creatorText = creatorMix
-    .map(c => `${c.key} (weight: ${c.weight})`)
-    .join(', ');
-
-  return `You are a LinkedIn content strategist and AI post analyzer for PostRoast.
-
-Your job: Score this LinkedIn post across 8 dimensions, identify why it will or won't perform, and provide actionable feedback.
-
-USER'S POST:
-"""
-${postText}
-"""
-
-USER'S GOALS (prioritized):
-${goalText}
-
-CREATOR STYLES TO CONSIDER:
-${creatorText}
-
-SCORE THIS POST on a scale of 0-100 for each dimension:
-
-1. **Hook Score** (0-100): Does the first line stop the scroll?
-   - 0-30: Boring, doesn't create curiosity
-   - 30-60: Okay, some curiosity but not compelling
-   - 60-80: Good hook, makes people want to read more
-   - 80-100: Exceptional, immediately compelling
-
-2. **Clarity Score** (0-100): Is the message clear and easy to understand?
-   - Consider: Is it obvious what the post is about? Can someone understand it in 5 seconds?
-
-3. **Authority Score** (0-100): Does it establish expertise or credibility?
-   - Consider: Does this position the writer as someone worth following?
-
-4. **Engagement Score** (0-100): Will people engage (like, comment, share)?
-   - Consider: Is there a reason to stop, react, or comment?
-
-5. **Format Score** (0-100): Does it follow a proven high-performing format?
-   - Common formats: Story, List, Framework, Contrarian, Data-Driven, Question, Vulnerability, Case Study
-
-6. **Goal Alignment Score** (0-100): Does it align with the user's goals?
-   - Consider: For "${goals[0]?.id || 'N/A'}", does this post help achieve that?
-
-7. **CTA Score** (0-100): Is there a clear, compelling call-to-action?
-   - Good CTAs: "DM me", "Reply with...", "Link in bio", "Comment below"
-   - Bad CTAs: None, vague, too aggressive
-
-8. **Originality Score** (0-100): Is this unique or does it feel generic?
-   - Consider: Would someone have seen this exact post before?
-
----
-
-RESPOND ONLY WITH VALID JSON (no markdown, no code blocks):
-
-{
-  "compositeScore": <0-100>,
-  "scores": {
-    "hook": <0-100>,
-    "clarity": <0-100>,
-    "authority": <0-100>,
-    "engagement": <0-100>,
-    "format": <0-100>,
-    "goalAlignment": <0-100>,
-    "cta": <0-100>,
-    "originality": <0-100>
+const goalInstructions = {
+  get_clients: {
+    emphasis: 'Credibility, specificity, proof. Does this post convince someone to hire?',
+    tone: 'Professional but warm. Confident without arrogance.',
+    hookStyle: 'Lead with result or problem the client faces.',
+    ctaInstruction: 'CTA should be DM, call booking, or discovery call. Make it easy.',
+    avoid: 'Hype language, unclear benefits, generic advice.',
+    rewriteGoal: 'Post feels like it comes from someone who delivers results.'
   },
-  "formatDetected": "<Story|List|Framework|Contrarian|Data|Question|Vulnerability|CaseStudy|Other>",
-  "summary": "<1 sentence summary of what this post does well>",
-  "weaknesses": [
-    "<specific weakness 1>",
-    "<specific weakness 2>",
-    "<specific weakness 3>"
-  ],
-  "keyInsight": "<1-2 sentences about the main issue holding this post back>",
-  "improvement": "<specific, actionable improvement advice>"
-}`;
+  grow_audience: {
+    emphasis: 'Reach, shareability, comment-bait. Will this get shared?',
+    tone: 'Conversational, slightly irreverent. You own the room.',
+    hookStyle: 'Start with a question, contrarian take, or gasping stat.',
+    ctaInstruction: 'Ask a question that makes people comment. Discussion bait.',
+    avoid: 'Niche jargon, self-centered angle, no payoff.',
+    rewriteGoal: 'Post feels like it will go viral in your niche.'
+  },
+  authority: {
+    emphasis: 'Expertise, insight, unique perspective. Do you sound like an expert?',
+    tone: 'Authoritative but teachable. You know things others don\'t.',
+    hookStyle: 'Start by breaking a belief or sharing insider knowledge.',
+    ctaInstruction: 'CTA should deepen relationship (follow, newsletter, next post).',
+    avoid: 'Buzzwords, surface-level takes, no unique angle.',
+    rewriteGoal: 'Post positions you as the authority in your niche.'
+  },
+  thought_leader: {
+    emphasis: 'Originality, depth, memorable insight. Is this worth remembering?',
+    tone: 'Contemplative, wise, slightly future-focused.',
+    hookStyle: 'Start with an observation about the world or industry.',
+    ctaInstruction: 'CTA should invite deeper conversation or reflection.',
+    avoid: 'Trends, short-term thinking, obvious advice.',
+    rewriteGoal: 'Post reads like it came from someone thinking 2 years ahead.'
+  },
+  viral: {
+    emphasis: 'Emotion, relatability, shareability. Will people HAVE to share?',
+    tone: 'Raw, vulnerable sometimes, definitely entertaining.',
+    hookStyle: 'Start with something shocking, funny, or deeply relatable.',
+    ctaInstruction: 'Don\'t ask for action—just make people feel something.',
+    avoid: 'Corporate speak, hedging, playing it safe.',
+    rewriteGoal: 'Post makes people laugh, feel seen, or want to tag someone.'
+  },
+  personal_brand: {
+    emphasis: 'Authenticity, consistency, memorable POV. Does this feel like YOU?',
+    tone: 'Your unique voice. No trying to be someone else.',
+    hookStyle: 'Lead with something only you would say.',
+    ctaInstruction: 'CTA should invite people into your world.',
+    avoid: 'Generic advice, copying others, playing roles.',
+    rewriteGoal: 'Post feels unmistakably like your brand.'
+  },
 }
 
-export function getRewritePrompt(postText, goals, scores, creatorMix, styleDNA = null) {
-  const creatorPatterns = {
-    welsh: {
-      style: 'Philosophical, warm, focus on freedom and authenticity',
-      exampleOpening: 'Remember: [contrarian take]',
-      signature: 'Asks reflective questions, builds to insight'
-    },
-    hormozi: {
-      style: 'Aggressive, direct, pattern-focused, contrarian',
-      exampleOpening: 'Listen: Here\'s what most miss...',
-      signature: 'Challenges conventional wisdom, gives framework'
-    },
-    acosta: {
-      style: 'Strategic, viral-focused, story-driven',
-      exampleOpening: 'I used to think [X]. Now I think [Y].',
-      signature: 'Creates tension through contrasts, clear CTAs'
-    },
-    rachitsky: {
-      style: 'Data-driven, educational, detailed breakdown',
-      exampleOpening: 'Here are the [number] metrics that matter...',
-      signature: 'Lists with data, step-by-step frameworks'
-    }
-  };
+export function getRoastPrompt(postText, goals, creatorMix) {
+  const goal = (goals && goals[0]?.id) || 'balanced'
+  const instructions = goalInstructions[goal] || goalInstructions.get_clients
 
-  let styleGuide = '';
-  if (styleDNA && styleDNA.posts_analysed >= 10) {
-    styleGuide = `
-WRITE IN THIS SPECIFIC PERSON'S VOICE:
-Voice fingerprint: ${styleDNA.voiceFingerprint}
-Voice tags: ${styleDNA.voiceTags?.join(', ')}
-Directness: ${styleDNA.directness}% (${styleDNA.directness > 60 ? 'very direct' : 'storytelling-focused'})
-Sample sentence: "${styleDNA.sampleSentence}"
+  const creatorText = creatorMix
+    .map(c => `- ${c.key}: ${c.style || 'expert in their field'}`)
+    .join('\n');
 
-Make this rewrite sound like THIS specific writer, not generic AI.
-`;
-  } else {
-    styleGuide = `
-CREATOR STYLES TO BLEND:
-${creatorMix.map(c => {
-  const pattern = creatorPatterns[c.key];
-  return pattern ? `${c.key}: ${pattern.style} (weight: ${c.weight})` : `${c.key} (weight: ${c.weight})`;
-}).join('\n')}
-`;
+  return `You are PostRoast — an expert LinkedIn strategist who writes posts that get results.
+
+YOUR ROLE:
+Analyze this LinkedIn post for someone whose PRIMARY GOAL is: ${goal.replace('_', ' ').toUpperCase()}
+
+GOAL CONTEXT:
+- Emphasis: ${instructions.emphasis}
+- Tone: ${instructions.tone}
+- Best hook style: ${instructions.hookStyle}
+- CTA approach: ${instructions.ctaInstruction}
+- What to avoid: ${instructions.avoid}
+- What success looks like: ${instructions.rewriteGoal}
+
+CREATOR INTELLIGENCE (blend these writing styles):
+${creatorText}
+Capture the ENERGY of these creators, not their content. Blend their tone, not their examples.
+
+SCORING DIMENSIONS (0-100 each):
+1. HOOK (0-100): Does the first 2 lines stop the scroll? (0=invisible, 100=impossible to skip)
+2. CLARITY (0-100): Can a stranger understand your point in 10 seconds? (0=confusing, 100=crystal clear)
+3. CREDIBILITY (0-100): Do you sound like you know what you're talking about? (0=novice, 100=industry expert)
+4. EMOTION (0-100): Does it make people FEEL something? (0=flat, 100=emotionally resonant)
+5. CTA (0-100): Does it have a clear next step? (0=no CTA, 100=compelling action)
+6. STRUCTURE (0-100): Is it organized logically? (0=rambling, 100=clear flow)
+7. ORIGINALITY (0-100): Is this unique to your POV? (0=generic, 100=only you could write this)
+8. GOAL ALIGNMENT (0-100): How well does this serve your stated goal? (0=misaligned, 100=perfect match)
+
+ADDITIONAL ANALYSIS:
+- format: If this follows a proven LinkedIn format, name it ("Case study", "Mistake list", "Insider leak", etc.) — otherwise "No format"
+- primaryStrength: One sentence about what works best
+- primaryWeakness: One sentence about the biggest problem
+- improvements: List 3 specific, actionable rewrites
+- compositeScore: Weighted average of all 8 dimensions
+
+CRITICAL RULES:
+- Vary your scores. Real posts are uneven. Someone can score 85 on clarity but 28 on CTA.
+- No all 60s or all 70s. That's lazy analysis.
+- Hook and CTA are often the BIGGEST levers—score them honestly.
+- NEVER give a high Goal Alignment score if the post doesn't serve the stated goal.
+
+RETURN: Valid JSON ONLY (no markdown code blocks, no explanation):
+{
+  "hook": 0,
+  "clarity": 0,
+  "credibility": 0,
+  "emotion": 0,
+  "cta": 0,
+  "structure": 0,
+  "originality": 0,
+  "goalAlignment": 0,
+  "format": "string",
+  "primaryStrength": "string",
+  "primaryWeakness": "string",
+  "improvements": ["string", "string", "string"],
+  "compositeScore": 0,
+  "feedback": {
+    "hook": "why this score",
+    "clarity": "why this score",
+    "credibility": "why this score",
+    "emotion": "why this score",
+    "cta": "why this score",
+    "structure": "why this score",
+    "originality": "why this score",
+    "goalAlignment": "why this score"
+  }
+}
+
+POST TO ANALYSE (max 2000 words):
+${postText.substring(0, 2000)}
+`
+
+export function getRewritePrompt(postText, goals, creatorMix, voiceDNA = null, industry = null) {
+  const goal = (goals && goals[0]?.id) || 'balanced'
+  const instructions = goalInstructions[goal] || goalInstructions.get_clients
+
+  let prompt = `You are PostRoast — an expert LinkedIn rewriter.
+
+REWRITE GOAL: ${goal.replace('_', ' ').toUpperCase()}
+
+REWRITE PRINCIPLES:
+- Emphasis: ${instructions.emphasis}
+- Tone: ${instructions.tone}
+- Hook style: ${instructions.hookStyle}
+- CTA approach: ${instructions.ctaInstruction}
+- Avoid: ${instructions.avoid}
+`
+
+  if (industry) {
+    prompt += `\nINDUSTRY CONTEXT: ${industry}\n`
   }
 
-  return `You are a LinkedIn copywriter rewriting posts to score higher on specific dimensions.
+  if (creatorMix && creatorMix.length > 0) {
+    prompt += `\nCREATOR BLEND (mix these styles):
+${creatorMix.map(c => `- ${c.key}: ${c.style || 'expert creator'}`).join('\n')}
+Capture their ENERGY, not their content.\n`
+  }
+
+  if (voiceDNA) {
+    prompt += `\nYOUR VOICE DNA:
+- Sentence structure: ${voiceDNA.structure || 'mixed'}
+- Energy: ${voiceDNA.energy || 'balanced'}
+- Post length: ${voiceDNA.avgLength || 'medium'} words
+Use these as your baseline.\n`
+  }
+
+  prompt += `
+REWRITE RULES (strict):
+1. The hook MUST be completely different—don't keep the same opener
+2. Remove hedging: "just", "maybe", "I think", "I believe"
+3. No AI phrases: "delve", "tapestry", "it's worth noting", "leverage", "synergy"
+4. No buzzwords: "paradigm", "disruptive", "utilize", "holistic"
+5. Short punchy lines (unless voice DNA says otherwise)
+6. Every sentence must earn its place—cut fluff
+7. CTA must match the goal
+8. Use creator blend for tone—don't copy, capture energy
+
+RETURN: Only the rewritten post. No explanation. No "Here's the rewrite:". Just the post.
 
 ORIGINAL POST:
-"""
-${postText}
-"""
+${postText.substring(0, 2500)}
+`
 
-CURRENT SCORES (out of 100):
-- Hook: ${scores.hook}
-- Clarity: ${scores.clarity}
-- Authority: ${scores.authority}
-- Engagement: ${scores.engagement}
-- Format: ${scores.format}
-- Goal Alignment: ${scores.goalAlignment}
+  return prompt
+}
 - CTA: ${scores.cta}
 - Originality: ${scores.originality}
 

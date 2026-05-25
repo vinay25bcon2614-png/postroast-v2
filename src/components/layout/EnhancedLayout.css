@@ -1,0 +1,85 @@
+.enhanced-layout {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  background: var(--bg-1);
+}
+
+.layout-main {
+  flex: 1;
+  margin-left: 240px;
+  margin-bottom: 72px;
+  padding: 32px 24px;
+  background: var(--bg-1);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.layout-main::-webkit-scrollbar {
+  width: 8px;
+}
+
+.layout-main::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.layout-main::-webkit-scrollbar-thumb {
+  background: var(--bg-4);
+  border-radius: var(--r-full);
+  transition: background var(--dur-normal);
+}
+
+.layout-main::-webkit-scrollbar-thumb:hover {
+  background: var(--bg-5);
+}
+
+/* Desktop Layout */
+@media (min-width: 769px) {
+  .enhanced-layout {
+    flex-direction: row;
+  }
+
+  .layout-main {
+    margin-left: 240px;
+    margin-bottom: 0;
+    padding-top: 32px;
+  }
+}
+
+/* Tablet Layout */
+@media (max-width: 1024px) {
+  .layout-main {
+    margin-left: 64px;
+    padding: 24px 16px;
+  }
+}
+
+/* Mobile Layout */
+@media (max-width: 768px) {
+  .enhanced-layout {
+    flex-direction: column;
+  }
+
+  .layout-main {
+    margin-left: 0;
+    margin-bottom: 80px;
+    padding: 24px 16px;
+    padding-top: 24px;
+  }
+}
+
+/* Content animation */
+.layout-main > * {
+  animation: fadeUp var(--dur-normal) var(--ease-out);
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

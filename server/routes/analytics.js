@@ -1,100 +1,156 @@
-import express from 'express';
-import { createSupabaseClient, getUser } from '../lib/supabase.js';
+/**
+ * GET /api/analytics
+ * Get user's analytics and performance data
+ */
+import express from 'express'
+import { getCurrentUser } from '../lib/database.js'
+import { getSupabaseServerClient } from '../lib/supabase.ts'
 
-const router = express.Router();
+const router = express.Router()
 
 router.get('/', async (req, res) => {
   try {
-    // Get user from token
-    const user = getUser(req.token);
-    if (!user) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    // Get current user
+    let user
+    try {
+      user = await getCurrentUser(req)
+    } catch (err) {
+      return res.status(401).json({ error: 'Unauthorized' })
     }
 
-    const supabase = createSupabaseClient(req.token);
+    const supabase = getSupabaseServerClient()
 
-    // Get all roasts for this user
-    const { data: roasts, error } = await supabase
-      .from('roasts')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+    // Parallel data fetching
+    const [roastsData, streakData, leaderboardData, profileData] = await Promise.all([
+      // Get all roasts for user
+      supabase
+        .from('roasts')
+        .select('scores, created_at, goals_active, format_detected')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false }),
+      
+      // Get streak
+      supabase
+        .from('streaks')
+        .select('current_streak, longest_streak, last_roast_date')
+        .eq('user_id', user.id)
+        .single(),
+      
+      // Get leaderboard position
+      supabase
+        .from('leaderboard_entries')
+        .select('avg_score, posts_this_week, improvement_this_week')
+        .eq('user_id', user.id)
+        .single(),
+      
+      // Get user profile
+      supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
+    ])
 
-    if (error) {
-      return res.status(500).json({ error: 'Failed to fetch roasts' });
-    }
+    const roasts = roastsData.data || []
+    const streak = streakData.data
+    const leaderboard = leaderboardData.data
+    const profile = profileData.data
 
-    if (!roasts || roasts.length === 0) {
+    // Calculate analytics
+    if (roasts.length === 0) {
       return res.json({
-        postsCount: 0,
-        avgScore: 0,
-        scoreHistory: [],
-        dimensionAverages: {
-          hook: 0,
-          clarity: 0,
-          authority: 0,
-          engagement: 0,
-          format: 0,
-          goalAlignment: 0,
-          cta: 0,
-          originality: 0
-        },
-        formatPerformance: {}
-      });
+        empty: true,
+        message: 'No roasts yet. Create your first roast to see analytics.'
+      })
     }
 
-    // Calculate statistics
-    const avgScore = Math.round(
-      roasts.reduce((sum, r) => sum + (r.composite_score || 0), 0) / roasts.length
-    );
+    // Calculate score trends
+    const scores30d = roasts.filter(r => {
+      const date = new Date(r.created_at)
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      return date >= thirtyDaysAgo
+    })
 
-    // Score history (last 30)
-    const scoreHistory = roasts.slice(0, 30).reverse().map(r => ({
-      date: new Date(r.created_at).toLocaleDateString(),
-      score: r.composite_score
-    }));
+    const avgScore = roasts.length > 0
+      ? Math.round(roasts.reduce((sum, r) => sum + (r.scores?.overall || 0), 0) / roasts.length)
+      : 0
 
-    // Dimension averages
+    const avgScore30d = scores30d.length > 0
+      ? Math.round(scores30d.reduce((sum, r) => sum + (r.scores?.overall || 0), 0) / scores30d.length)
+      : avgScore
+
+    const improvement = avgScore30d - (roasts.length > scores30d.length ? avgScore : 0)
+
+    // Calculate dimension averages
     const dimensionAverages = {
-      hook: Math.round(roasts.reduce((sum, r) => sum + (r.hook_score || 0), 0) / roasts.length),
-      clarity: Math.round(roasts.reduce((sum, r) => sum + (r.clarity_score || 0), 0) / roasts.length),
-      authority: Math.round(roasts.reduce((sum, r) => sum + (r.authority_score || 0), 0) / roasts.length),
-      engagement: Math.round(roasts.reduce((sum, r) => sum + (r.engagement_score || 0), 0) / roasts.length),
-      format: Math.round(roasts.reduce((sum, r) => sum + (r.format_score || 0), 0) / roasts.length),
-      goalAlignment: Math.round(roasts.reduce((sum, r) => sum + (r.goal_alignment_score || 0), 0) / roasts.length),
-      cta: Math.round(roasts.reduce((sum, r) => sum + (r.cta_score || 0), 0) / roasts.length),
-      originality: Math.round(roasts.reduce((sum, r) => sum + (r.originality_score || 0), 0) / roasts.length)
-    };
+      hook: 0,
+      clarity: 0,
+      authority: 0,
+      engagement: 0,
+      originality: 0,
+      cta: 0,
+      structure: 0,
+      viral_potential: 0
+    }
 
-    // Format performance
-    const formatPerformance = {};
     roasts.forEach(r => {
-      const format = r.format_detected || 'Unknown';
-      if (!formatPerformance[format]) {
-        formatPerformance[format] = { count: 0, totalScore: 0 };
-      }
-      formatPerformance[format].count += 1;
-      formatPerformance[format].totalScore += r.composite_score || 0;
-    });
+      Object.keys(dimensionAverages).forEach(key => {
+        dimensionAverages[key] += (r.scores?.[key] || 0)
+      })
+    })
 
-    Object.keys(formatPerformance).forEach(format => {
-      formatPerformance[format].avgScore = Math.round(
-        formatPerformance[format].totalScore / formatPerformance[format].count
-      );
-    });
+    Object.keys(dimensionAverages).forEach(key => {
+      dimensionAverages[key] = Math.round(dimensionAverages[key] / roasts.length)
+    })
+
+    // Format performance by format detected
+    const formatPerformance = {}
+    roasts.forEach(r => {
+      const format = r.format_detected || 'Unknown'
+      if (!formatPerformance[format]) {
+        formatPerformance[format] = { total: 0, count: 0, avg: 0 }
+      }
+      formatPerformance[format].total += r.scores?.overall || 0
+      formatPerformance[format].count += 1
+      formatPerformance[format].avg = Math.round(formatPerformance[format].total / formatPerformance[format].count)
+    })
 
     res.json({
-      postsCount: roasts.length,
-      avgScore,
-      scoreHistory,
-      dimensionAverages,
-      formatPerformance,
-      recentPosts: roasts.slice(0, 5)
-    });
+      empty: false,
+      summary: {
+        total_roasts: roasts.length,
+        avg_score: avgScore,
+        avg_score_30d: avgScore30d,
+        improvement_30d: Math.round(improvement),
+        streak: streak?.current_streak || 0,
+        longest_streak: streak?.longest_streak || 0
+      },
+      leaderboard: {
+        avg_score: leaderboard?.avg_score || 0,
+        posts_this_week: leaderboard?.posts_this_week || 0,
+        improvement_this_week: Math.round(leaderboard?.improvement_this_week || 0)
+      },
+      dimensions: dimensionAverages,
+      formats: formatPerformance,
+      recent: roasts.slice(0, 10).map(r => ({
+        id: r.id,
+        scores: r.scores,
+        created_at: r.created_at,
+        format: r.format_detected
+      })),
+      style_dna: profile && {
+        tone: profile.tone_score,
+        storytelling: profile.storytelling_score,
+        vulnerability: profile.vulnerability_score,
+        humor: profile.humor_score,
+        authority: profile.authority_score,
+        posts_analyzed: profile.posts_analyzed
+      }
+    })
   } catch (error) {
-    console.error('Analytics error:', error);
-    res.status(500).json({ error: error.message });
+    console.error('Analytics API error:', error)
+    res.status(500).json({ error: error.message || 'Internal server error' })
   }
-});
+})
 
 export default router;

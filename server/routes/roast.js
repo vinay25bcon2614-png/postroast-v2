@@ -1,153 +1,198 @@
-import express from 'express';
-import Anthropic from '@anthropic-ai/sdk';
-import { createSupabaseClient, getUser } from '../lib/supabase.js';
-import { getRoastPrompt } from '../lib/prompts.js';
+/**
+ * POST /api/roast
+ * Score and rewrite a LinkedIn post using Claude
+ */
+import express from 'express'
+import Anthropic from '@anthropic-ai/sdk'
+import { getCurrentUser, getOrCreateUserProfile, checkRoastLimit, incrementRoastCount, updateUserStreak, updateLeaderboardEntry, saveRoast } from '../lib/database.js'
 
-const router = express.Router();
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const router = express.Router()
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+/**
+ * Roasting prompt builder
+ */
+function buildRoastPrompt(post, goals, creatorMix = [], styleDNA = null) {
+  const goalsText = goals.join(', ')
+  
+  let prompt = `You are a LinkedIn post strategist and copywriter. Analyze this LinkedIn post using this structured evaluation framework.
+
+POST TO ANALYZE:
+"${post}"
+
+TARGET GOALS: ${goalsText}
+
+Please score this post on these 8 dimensions (0-100 each):
+1. Hook Quality - Does it grab attention immediately?
+2. Clarity - Is the core message clear and easy to understand?
+3. Authority - Does it establish credibility or expertise?
+4. Engagement - Does it invite comments/reactions?
+5. Originality - Is it fresh or generic?
+6. CTA Strength - Is the call-to-action clear?
+7. Structure - Is it well-organized and easy to follow?
+8. Viral Potential - Could it get high reach/impressions?
+
+Also identify:
+- What creator's style does this most resemble? (Walsh, Hormozi, Acosta, Bartlett, Rachitsky, McCormick)
+- Suggested format classification
+- Top 3 weaknesses
+- Top 3 strengths
+- Suggested rewrite that improves the weakest dimension
+
+Respond ONLY with valid JSON (no markdown, no code blocks):
+{
+  "scores": {
+    "hook": 0,
+    "clarity": 0,
+    "authority": 0,
+    "engagement": 0,
+    "originality": 0,
+    "cta": 0,
+    "structure": 0,
+    "viral_potential": 0,
+    "overall": 0
+  },
+  "format_detected": "string",
+  "creators_matched": ["Walsh", "Hormozi"],
+  "strengths": ["strength1", "strength2", "strength3"],
+  "weaknesses": ["weakness1", "weakness2", "weakness3"],
+  "rewrite": "improved post text here",
+  "reasoning": "brief explanation of the rewrite"
+}
+`
+
+  if (styleDNA) {
+    prompt += `\n\nUSER'S WRITING STYLE (based on analysis of their previous posts):
+- Tone tendency: ${styleDNA.tone_score}/1
+- Storytelling: ${styleDNA.storytelling_score}/1
+- Vulnerability: ${styleDNA.vulnerability_score}/1
+- Humor: ${styleDNA.humor_score}/1
+- Authority emphasis: ${styleDNA.authority_score}/1
+
+Incorporate their natural style into the rewrite.`
+  }
+
+  return prompt
+}
 
 router.post('/', async (req, res) => {
   try {
-    const { postText, goals, creatorMix } = req.body;
-    
-    if (!postText || !postText.trim()) {
-      return res.status(400).json({ error: 'Post text is required' });
+    const { post, goals, mode = 'full', styleDNA } = req.body
+
+    // Validation
+    if (!post || !post.trim()) {
+      return res.status(400).json({ error: 'Post text is required' })
     }
 
-    if (!goals || goals.length === 0) {
-      return res.status(400).json({ error: 'At least one goal is required' });
+    if (!goals || !Array.isArray(goals) || goals.length === 0) {
+      return res.status(400).json({ error: 'At least one goal is required' })
     }
 
-    // Get user from token
-    const user = getUser(req.token);
-    if (!user) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    if (post.length > 5000) {
+      return res.status(400).json({ error: 'Post too long (max 5000 characters)' })
     }
 
-    // Get roast prompt
-    const prompt = getRoastPrompt(postText, goals, creatorMix || []);
+    // Get current user
+    let user
+    try {
+      user = await getCurrentUser(req)
+    } catch (err) {
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
 
-    // Call Claude API
+    // Get or create user profile
+    await getOrCreateUserProfile(user.id)
+
+    // Check roast limit
+    const { allowed, used, limit } = await checkRoastLimit(user.id)
+    if (!allowed) {
+      return res.status(429).json({
+        error: `Daily limit reached (${used}/${limit})`,
+        used,
+        limit,
+        upgrade_available: true
+      })
+    }
+
+    // Build Claude prompt
+    const prompt = buildRoastPrompt(post, goals, [], styleDNA)
+
+    // Call Claude
     const message = await anthropic.messages.create({
       model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 1024,
+      max_tokens: 2000,
       messages: [
         {
           role: 'user',
           content: prompt
         }
       ]
-    });
+    })
 
-    // Extract JSON response
-    const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
-    let analysis;
+    // Extract response
+    const responseText = message.content[0].type === 'text' ? message.content[0].text : ''
     
+    let analysis
     try {
-      // Try to parse JSON from the response
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-      analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+      // Remove markdown code blocks if present
+      let jsonText = responseText
+      if (jsonText.startsWith('```json')) {
+        jsonText = jsonText.slice(7)
+      }
+      if (jsonText.startsWith('```')) {
+        jsonText = jsonText.slice(3)
+      }
+      if (jsonText.endsWith('```')) {
+        jsonText = jsonText.slice(0, -3)
+      }
+      
+      analysis = JSON.parse(jsonText.trim())
     } catch (e) {
-      console.error('Failed to parse Claude response:', responseText);
-      return res.status(500).json({ error: 'Failed to parse AI response' });
+      console.error('Failed to parse Claude response:', responseText)
+      return res.status(500).json({ error: 'Failed to parse AI response' })
     }
 
-    if (!analysis) {
-      return res.status(500).json({ error: 'Invalid AI response format' });
+    // Validate response
+    if (!analysis.scores || typeof analysis.scores.overall !== 'number') {
+      console.error('Invalid analysis structure:', analysis)
+      return res.status(500).json({ error: 'Invalid AI response format' })
     }
 
-    // Save roast to Supabase
-    const supabase = createSupabaseClient(req.token);
-    const { data, error } = await supabase.from('roasts').insert({
-      user_id: user.id,
-      original_text: postText,
-      composite_score: Math.round(analysis.compositeScore || 0),
-      hook_score: Math.round(analysis.scores?.hook || 0),
-      clarity_score: Math.round(analysis.scores?.clarity || 0),
-      authority_score: Math.round(analysis.scores?.authority || 0),
-      engagement_score: Math.round(analysis.scores?.engagement || 0),
-      format_score: Math.round(analysis.scores?.format || 0),
-      goal_alignment_score: Math.round(analysis.scores?.goalAlignment || 0),
-      cta_score: Math.round(analysis.scores?.cta || 0),
-      originality_score: Math.round(analysis.scores?.originality || 0),
-      format_detected: analysis.formatDetected,
-      summary: analysis.summary,
-      weaknesses: analysis.weaknesses,
-      key_insight: analysis.keyInsight,
-      improvement_suggestion: analysis.improvement,
-      goals: goals.map(g => g.id),
-      creator_mix: creatorMix || []
-    }).select();
-
-    if (error) {
-      console.error('Supabase error:', error);
-      return res.status(500).json({ error: 'Failed to save roast' });
+    // Save roast to database
+    const roastData = {
+      original_post: post,
+      goals,
+      scores: analysis.scores,
+      rewrite: analysis.rewrite,
+      rewrite_prompt: prompt,
+      format_detected: analysis.format_detected,
+      creators_used: analysis.creators_matched || []
     }
 
-    // Update streak
-    await updateStreak(user.id, supabase);
+    const savedRoast = await saveRoast(user.id, roastData)
 
-    // Update leaderboard
-    await updateLeaderboard(user.id, analysis.compositeScore, supabase);
+    // Update streak, usage, and leaderboard
+    await Promise.all([
+      incrementRoastCount(user.id),
+      updateUserStreak(user.id),
+      updateLeaderboardEntry(user.id, analysis.scores.overall)
+    ])
 
     res.json({
-      roastId: data?.[0]?.id,
-      analysis: {
-        compositeScore: analysis.compositeScore,
-        scores: analysis.scores,
-        formatDetected: analysis.formatDetected,
-        summary: analysis.summary,
-        weaknesses: analysis.weaknesses,
-        keyInsight: analysis.keyInsight,
-        improvement: analysis.improvement
-      }
-    });
+      roast_id: savedRoast.id,
+      scores: analysis.scores,
+      format_detected: analysis.format_detected,
+      creators_matched: analysis.creators_matched,
+      strengths: analysis.strengths,
+      weaknesses: analysis.weaknesses,
+      rewrite: analysis.rewrite,
+      reasoning: analysis.reasoning
+    })
   } catch (error) {
-    console.error('Roast error:', error);
-    res.status(500).json({ error: error.message });
+    console.error('Roast API error:', error)
+    res.status(500).json({ error: error.message || 'Internal server error' })
   }
-});
-
-async function updateStreak(userId, supabase) {
-  const today = new Date().toISOString().split('T')[0];
-  
-  const { data: streak } = await supabase
-    .from('streaks')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
-
-  if (!streak) {
-    // Create new streak
-    await supabase.from('streaks').insert({
-      user_id: userId,
-      current_streak: 1,
-      best_streak: 1,
-      last_roast_date: today
-    });
-  } else {
-    const lastDate = streak.last_roast_date;
-    const today_date = new Date();
-    const last_date = new Date(lastDate);
-    const diffDays = Math.floor((today_date - last_date) / (1000 * 60 * 60 * 24));
-
-    let newStreak = streak.current_streak;
-    if (diffDays === 1) {
-      newStreak = streak.current_streak + 1;
-    } else if (diffDays > 1) {
-      newStreak = 1;
-    }
-
-    await supabase
-      .from('streaks')
-      .update({
-        current_streak: newStreak,
-        best_streak: Math.max(newStreak, streak.best_streak),
-        last_roast_date: today
-      })
-      .eq('user_id', userId);
-  }
-}
+})
 
 async function updateLeaderboard(userId, score, supabase) {
   const { data: existing } = await supabase
