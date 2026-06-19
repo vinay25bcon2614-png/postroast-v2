@@ -132,6 +132,7 @@ RETURN: Valid JSON ONLY (no markdown code blocks, no explanation):
 POST TO ANALYSE (max 2000 words):
 ${postText.substring(0, 2000)}
 `
+}
 
 export function getRewritePrompt(postText, goals, creatorMix, voiceDNA = null, industry = null) {
   const goal = (goals && goals[0]?.id) || 'balanced'
@@ -185,41 +186,6 @@ ${postText.substring(0, 2500)}
 `
 
   return prompt
-}
-- CTA: ${scores.cta}
-- Originality: ${scores.originality}
-
-WEAKEST AREAS TO FIX:
-${[
-  { key: 'hook', score: scores.hook },
-  { key: 'clarity', score: scores.clarity },
-  { key: 'authority', score: scores.authority },
-  { key: 'engagement', score: scores.engagement },
-  { key: 'cta', score: scores.cta },
-  { key: 'originality', score: scores.originality }
-]
-  .sort((a, b) => a.score - b.score)
-  .slice(0, 3)
-  .map(d => `- ${d.key}: ${d.score}/100`)
-  .join('\n')}
-
-USER'S GOALS: ${goals.map(g => g.id).join(', ')}
-
-${styleGuide}
-
----
-
-REWRITE THIS POST TO:
-1. Fix the weakest scoring dimensions
-2. Keep the core message and authenticity
-3. Match the creator style blend above
-4. Stay under 300 words
-5. Include a strong CTA
-
-Important: Do NOT add fake statistics or false claims. Keep everything truthful.
-Do NOT change the message entirely - enhance it.
-
-RESPOND WITH ONLY THE REWRITTEN POST TEXT (no markdown, no explanation, just the post):`;
 }
 
 export function getHookPrompt(postTopic, audience, goals, creatorMix) {
